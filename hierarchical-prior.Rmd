@@ -1,0 +1,193 @@
+----
+title: "Hierarchical beta binomial"
+author: "Steve Simon"
+date: "Saturday, May 28, 2016"
+output: html_document
+---
+
+Assume that you have two "clusters". The first is your prior data with 4/16 successes/failures and
+the second is your observed data with 18/42 successes/failures.
+
+Now consider the same prior, but your observed data is 54/6 successes/failures.
+
+```{r run_simple_jags_model}
+
+library("rjags")
+
+fnm <- "jags_beta_binomial.txt"
+mon <- c("pi")
+
+dat <- list(a=4, b=16, x=18, n=60)
+mod <- jags.model(fnm, data=dat, quiet=TRUE)
+out <- coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
+plot(out)
+
+dat <- list(a=4, b=16, x=54, n=60)
+mod <- jags.model(fnm, data=dat, quiet=TRUE)
+out <- coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
+summary(out)
+plot(out)
+
+```
+
+Now assume that both clusters (the prior and the data) are drawn from a distribution
+that is beta(alpha,beta) and alpha and beta are hyperpriors distributed exponentially. What is the
+posterior solution?
+
+```{r run_gamma_gamma_hyperprior_model}
+
+fnm <- "jags_gamma_gamma_hyper.txt"
+mon <- c("pi0", "pi1", "hyper_a", "hyper_b", "hyper_n", "hyper_pi")
+
+dat <- list(x0=4, n0=20, x=18, n=60)
+mod <- jags.model(fnm, data=dat, quiet=TRUE)
+out <- coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
+summary(out)
+
+dat <- list(x0=4, n0=20, x=54, n=60)
+mod <- jags.model(fnm, data=dat, quiet=TRUE)
+out <- coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
+summary(out)
+
+```
+
+
+I'm still working on thse sections.
+
+```{r, compute_everything_gamma_gamma, eval=FALSE}
+
+calculate_gamma_gamma_prior <- function(s0, s1, n) {
+  s <- seq(s0, s1, length=n)
+  z <- outer(exp(-s), exp(-s))
+  calculate_p <- function(s_row, s_col) {s_row/(s_row+s_col)}
+  return(list(s_row=s, s_col=s, z=z, calculate_p=calculate_p))
+}
+
+calculate_likelihood <- function(prior, x0, n0, x1, n1) {
+  # use the same dimensions as the prior
+  likelihood <- prior
+  for (i in 1:length(likelihood$s_row)) {
+    for (j in 1:length(likelihood$s_col)) {
+      p <- prior$calculate_p(likelihood$s_row[i], likelihood$s_col[j])
+      likelihood$z[i, j] <- dbinom(x0, n0, p)*dbinom(x1, n1, p)
+    }
+  }
+  return(likelihood)
+}
+
+calculate_posterior <- function(prior, likelihood) {
+  # use the same dimensions as the prior
+  posterior <- prior
+  posterior$z <- prior$z * likelihood$z
+  posterior$z <- posterior$z / sum(posterior$z)
+  return(posterior)
+}
+
+gamma_gamma_prior <- calculate_gamma_gamma_prior(0.001, 4, 400)
+
+partial_likelihood <- calculate_likelihood(gamma_gamma_prior, 4, 20, 0, 0)
+
+nice_likelihood <- calculate_likelihood(gamma_gamma_prior, 4, 20, 18, 60)
+
+nasty_likelihood <- calculate_likelihood(gamma_gamma_prior, 4, 20, 54, 60)
+
+partial_posterior <- calculate_posterior(gamma_gamma_prior, partial_likelihood)
+
+nice_posterior <- calculate_posterior(gamma_gamma_prior, nice_likelihood)
+
+nasty_posterior <- calculate_posterior(gamma_gamma_prior, nasty_likelihood)
+
+```
+
+Plot everything.
+
+```{r plot_everything_gamma_gamma, fig.width=5, fig.height=5, eval=FALSE}
+
+draw_surface <- function(x) {
+  thin_row <- seq(1, length(x$s_row), by=10)
+  thin_col <- seq(1, length(x$s_col), by=10)
+  thin_z <- x$z
+  thin_z <- thin_z[thin_row, ]
+  thin_z <- thin_z[, thin_col]
+  persp(x$s_row[thin_row], x$s_col[thin_col], thin_z, theta=40, phi=20)
+}
+
+draw_contour <- function(x) {
+  contour(x$s_row, x$s_col, x$z)
+}
+
+draw_surface(gamma_gamma_prior)
+draw_contour(gamma_gamma_prior)
+
+draw_surface(nice_likelihood)
+draw_contour(nice_likelihood)
+
+draw_surface(nasty_likelihood)
+draw_contour(nasty_likelihood)
+
+draw_surface(partial_likelihood)
+draw_contour(partial_likelihood)
+
+draw_surface(nice_posterior)
+draw_contour(nice_posterior)
+
+draw_surface(nasty_posterior)
+draw_contour(nasty_posterior)
+
+draw_surface(partial_posterior)
+draw_contour(partial_posterior)
+```
+
+```{r, compute_everything_beta_gamma, eval=FALSE}
+
+calculate_beta_gamma_prior <- function(s0, s1, n) {
+  s_beta <- seq(1/n, 1-(1/n), length=n)
+  s_gamma <- seq(s0, s1, length=n)
+  z <- outer(dbeta(s_beta, 1, 1), dgamma(s_gamma, shape=2, scale=1))
+  calculate_p <- function(s_row, s_col) {s_row}
+  return(list(s_row=s_beta, s_col=s_gamma, z=z, calculate_p=calculate_p))
+}
+
+beta_gamma_prior <- calculate_beta_gamma_prior(0.001, 8, 401)
+
+partial_likelihood <- calculate_likelihood(beta_gamma_prior, 4, 20, 0, 0)
+
+nice_likelihood <- calculate_likelihood(beta_gamma_prior, 4, 20, 18, 60)
+
+nasty_likelihood <- calculate_likelihood(beta_gamma_prior, 4, 20, 54, 60)
+
+partial_posterior <- calculate_posterior(beta_gamma_prior, partial_likelihood)
+
+nice_posterior <- calculate_posterior(beta_gamma_prior, nice_likelihood)
+
+nasty_posterior <- calculate_posterior(beta_gamma_prior, nasty_likelihood)
+
+```
+
+```{r plot_everything_beta_gamma, fig.width=5, fig.height=5, eval=FALSE}
+
+draw_surface(beta_gamma_prior)
+draw_contour(beta_gamma_prior)
+
+draw_surface(nice_likelihood)
+draw_contour(nice_likelihood)
+
+draw_surface(nasty_likelihood)
+draw_contour(nasty_likelihood)
+
+draw_surface(partial_likelihood)
+draw_contour(partial_likelihood)
+
+draw_surface(nice_posterior)
+draw_contour(nice_posterior)
+
+draw_surface(nasty_posterior)
+draw_contour(nasty_posterior)
+
+draw_surface(partial_posterior)
+draw_contour(partial_posterior)
+```
+
+```{r save_everything}
+save.image("hierarchical-prior.RData")
+```
