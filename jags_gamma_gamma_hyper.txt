@@ -1,6 +1,6 @@
 model {
- hyper_a ~ dgamma(0.001,1)
- hyper_b ~ dgamma(0.001,1)
+ hyper_a ~ dgamma(hyper_shape, hyper_scale)
+ hyper_b ~ dgamma(hyper_shape, hyper_scale)
  pi0 ~ dbeta(hyper_a,hyper_b)
  pi1 ~ dbeta(hyper_a,hyper_b)
  x0 ~ dbin(pi0, n0)
