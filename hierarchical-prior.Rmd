@@ -57,23 +57,12 @@ out$gg1 <-
   coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
 summary(out$gg1)
 
-dat <- list(x0=4, n0=20, x=18, n=60, hyper_shape=0.001, hyper_scale=1)
-mod <- jags.model(fnm, data=dat, quiet=TRUE)
-out$gg2 <-
-  coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
-summary(out$gg2)
-
 dat <- list(x0=4, n0=20, x=54, n=60, hyper_shape=1, hyper_scale=1)
 mod <- jags.model(fnm, data=dat, quiet=TRUE)
 out$gg3 <-
   coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
 summary(out$gg3)
 
-dat <- list(x0=4, n0=20, x=54, n=60, hyper_shape=0.001, hyper_scale=1)
-mod <- jags.model(fnm, data=dat, quiet=TRUE)
-out$gg4 <-
-  coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
-summary(out$gg4)
 ```
 
 
