@@ -48,20 +48,28 @@ that is beta(alpha,beta) and alpha and beta are hyperpriors distributed exponent
 
 ```{r run_gamma_gamma_hyperprior_model}
 
-fnm <- "jags_gamma_gamma_hyper.txt"
-mon <- c("pi0", "pi1", "hyper_a", "hyper_b", "hyper_n", "hyper_pi")
+run_bayes <- function(x0, n0, x, n, model_name, output_name) {
+  fnm <- paste("jags", model_name, "hyper.txt", sep="_")
+  dat <- list(x0=x0, n0=n0, x=x, n=n)
+  mon <- c("pi0", "pi1", "hyper_a", "hyper_b", "hyper_n", "hyper_pi")
+  mod <- jags.model(fnm, data=dat, quiet=TRUE, n.adapt=10000)
+  out[[output_name]] <<- 
+    coda.samples(mod, variable.names=mon, n.iter=10000, progress.bar=NULL)
+  print(summary(out[[output_name]]))  
+  plot(out[[output_name]])
+}
 
-dat <- list(x0=4, n0=20, x=18, n=60, hyper_shape=1, hyper_scale=1)
-mod <- jags.model(fnm, data=dat, quiet=TRUE)
-out$gg1 <-
-  coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
-summary(out$gg1)
+run_bayes(4, 20, 18, 60, "gamma_gamma", "gg1")
+run_bayes(4, 20, 54, 60, "gamma_gamma", "gg2")
 
-dat <- list(x0=4, n0=20, x=54, n=60, hyper_shape=1, hyper_scale=1)
-mod <- jags.model(fnm, data=dat, quiet=TRUE)
-out$gg2 <-
-  coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
-summary(out$gg2)
+```
+Try a uniform distribution instead.
+
+
+```{r run_uniform_uniform_hyperprior_model}
+
+run_bayes(4, 20, 18, 60, "uniform_uniform", "uu1")
+run_bayes(4, 20, 54, 60, "uniform_uniform", "uu2")
 
 ```
 
@@ -72,20 +80,8 @@ You can avoid much of this correlation by re-parameterizing.
 
 ```{r run_beta_pareto_model}
 
-fnm <- "jags_beta_pareto_hyper.txt"
-mon <- c("pi0", "pi1", "hyper_a", "hyper_b", "hyper_n", "hyper_pi")
-
-dat <- list(x0=4, n0=20, x=18, n=60)
-mod <- jags.model(fnm, data=dat, quiet=TRUE)
-out$bp1 <-
-  coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
-summary(out$bp1)
-
-dat <- list(x0=4, n0=20, x=54, n=60)
-mod <- jags.model(fnm, data=dat, quiet=TRUE)
-out$bp23 <-
-  coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
-summary(out$bp2)
+run_bayes(4, 20, 18, 60, "beta_pareto", "bp1")
+run_bayes(4, 20, 54, 60, "beta_pareto", "bp2")
 
 ```
 
