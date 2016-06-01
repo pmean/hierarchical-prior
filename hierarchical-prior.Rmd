@@ -59,12 +59,35 @@ summary(out$gg1)
 
 dat <- list(x0=4, n0=20, x=54, n=60, hyper_shape=1, hyper_scale=1)
 mod <- jags.model(fnm, data=dat, quiet=TRUE)
-out$gg3 <-
+out$gg2 <-
   coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
-summary(out$gg3)
+summary(out$gg2)
 
 ```
 
+The problem with this model, according to some sources is that the two hyper
+parameters are correlated so highly as to make the Gibbs sampler inefficient.
+
+You can avoid much of this correlation by re-parameterizing.
+
+```{r run_beta_pareto_model}
+
+fnm <- "jags_beta_pareto_hyper.txt"
+mon <- c("pi0", "pi1", "hyper_a", "hyper_b", "hyper_n", "hyper_pi")
+
+dat <- list(x0=4, n0=20, x=18, n=60)
+mod <- jags.model(fnm, data=dat, quiet=TRUE)
+out$bp1 <-
+  coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
+summary(out$bp1)
+
+dat <- list(x0=4, n0=20, x=54, n=60)
+mod <- jags.model(fnm, data=dat, quiet=TRUE)
+out$bp23 <-
+  coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
+summary(out$bp2)
+
+```
 
 I'm still working on thse sections.
 
