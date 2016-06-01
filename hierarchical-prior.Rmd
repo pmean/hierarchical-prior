@@ -5,8 +5,9 @@ date: "Saturday, May 28, 2016"
 output: html_document
 ---
 
-Assume that you have two "clusters". The first is your prior data with 4/16 successes/failures and
-the second is your observed data with 18/42 successes/failures.
+Assume that you have two "clusters". The first is your prior data 
+with 4/16 successes/failures and the second is your observed data with
+18/42 successes/failures.
 
 Now consider the same prior, but your observed data is 54/6 successes/failures.
 
@@ -20,16 +21,21 @@ library("rjags")
 fnm <- "jags_beta_binomial.txt"
 mon <- c("pi")
 
+out <- list(description="jags output")
+
 dat <- list(a=4, b=16, x=18, n=60)
 mod <- jags.model(fnm, data=dat, quiet=TRUE)
-out <- coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
-plot(out)
+out$bb1 <- 
+  coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
+summary(out$bb1)
+plot(out$bb1)
 
 dat <- list(a=4, b=16, x=54, n=60)
 mod <- jags.model(fnm, data=dat, quiet=TRUE)
-out <- coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
-summary(out)
-plot(out)
+out$bb2 <-
+  coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
+summary(out$bb2)
+plot(out$bb2)
 
 ```
 
@@ -45,16 +51,29 @@ that is beta(alpha,beta) and alpha and beta are hyperpriors distributed exponent
 fnm <- "jags_gamma_gamma_hyper.txt"
 mon <- c("pi0", "pi1", "hyper_a", "hyper_b", "hyper_n", "hyper_pi")
 
-dat <- list(x0=4, n0=20, x=18, n=60)
+dat <- list(x0=4, n0=20, x=18, n=60, hyper_shape=1, hyper_scale=1)
 mod <- jags.model(fnm, data=dat, quiet=TRUE)
-out <- coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
-summary(out)
+out$gg1 <-
+  coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
+summary(out$gg1)
 
-dat <- list(x0=4, n0=20, x=54, n=60)
+dat <- list(x0=4, n0=20, x=18, n=60, hyper_shape=0.001, hyper_scale=1)
 mod <- jags.model(fnm, data=dat, quiet=TRUE)
-out <- coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
-summary(out)
+out$gg2 <-
+  coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
+summary(out$gg2)
 
+dat <- list(x0=4, n0=20, x=54, n=60, hyper_shape=1, hyper_scale=1)
+mod <- jags.model(fnm, data=dat, quiet=TRUE)
+out$gg3 <-
+  coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
+summary(out$gg3)
+
+dat <- list(x0=4, n0=20, x=54, n=60, hyper_shape=0.001, hyper_scale=1)
+mod <- jags.model(fnm, data=dat, quiet=TRUE)
+out$gg4 <-
+  coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
+summary(out$gg4)
 ```
 
 
