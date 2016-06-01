@@ -10,6 +10,9 @@ the second is your observed data with 18/42 successes/failures.
 
 Now consider the same prior, but your observed data is 54/6 successes/failures.
 
+Here is the simple beta-binomial model. The posterior mean of pi is a weighted average of the prior
+mean (4/20 or 20%) and the data mean (18/60 or 30%; 54/60 or 90%).
+
 ```{r run_simple_jags_model}
 
 library("rjags")
@@ -30,9 +33,12 @@ plot(out)
 
 ```
 
-Now assume that both clusters (the prior and the data) are drawn from a distribution
-that is beta(alpha,beta) and alpha and beta are hyperpriors distributed exponentially. What is the
-posterior solution?
+You can use a hierarchical model to downweight the prior mean when the data disagrees
+strongly with the prior. Here's a simple approach, though it does not work so well.
+
+
+Start by assuming that both clusters (the prior and the data) are drawn from a distribution
+that is beta(alpha,beta) and alpha and beta are hyperpriors distributed exponentially.
 
 ```{r run_gamma_gamma_hyperprior_model}
 
