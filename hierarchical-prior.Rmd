@@ -5,8 +5,9 @@ date: "Saturday, May 28, 2016"
 output: html_document
 ---
 
-Assume that you have two "clusters". The first is your prior data with 4/16 successes/failures and
-the second is your observed data with 18/42 successes/failures.
+Assume that you have two "clusters". The first is your prior data 
+with 4/16 successes/failures and the second is your observed data with
+18/42 successes/failures.
 
 Now consider the same prior, but your observed data is 54/6 successes/failures.
 
@@ -36,8 +37,8 @@ plot(out$bb2)
 ```
 
 Now assume that both clusters (the prior and the data) are drawn from a distribution
-that is beta(alpha,beta) and alpha and beta are hyperpriors distributed exponentially. What is the
-posterior solution?
+that is beta(alpha,beta) and alpha and beta are hyperpriors distributed exponentially.
+What is the posterior solution?
   
 ```{r run_gamma_gamma_hyperprior_model}
 
