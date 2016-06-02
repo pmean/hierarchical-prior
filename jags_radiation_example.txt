@@ -3,8 +3,10 @@ model {
  hyper_pi ~ dbeta(1, 1)
  hyper_a <- hyper_n * hyper_pi
  hyper_b <- hyper_n - hyper_a
- pi0 ~ dbeta(hyper_a, hyper_b)
- pi1 ~ dbeta(hyper_a, hyper_b)
- x0 ~ dbin(pi0, n0)
- x  ~ dbin(pi1, n)
+ for (i in 1:max(g[])) {
+  pi[i] ~ dbeta(hyper_a, hyper_b) 
+ }
+ for (i in 1:n) {
+  x[i] ~ dbin(pi[g[i]], 400)
+ }
 }

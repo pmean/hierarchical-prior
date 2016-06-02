@@ -1,0 +1,33 @@
+---
+title: "Radiation example from OzDASL"
+author: "Steve Simon"
+date: "Wednesday, June 01, 2016"
+output: html_document
+---
+
+Read the data
+
+```{r read}
+rad <- read.table(file="http://www.statsci.org/data/general/radiatio.txt", header=TRUE)
+summary(rad)
+head(rad)
+```
+
+This is the number out of 400 who survived. Calculate some summary statistics.
+
+```{r summary_statistics}
+plot(rad$Occasion, rad$Survived/400)
+round(mean(rad$Survived)/400, 2)
+```
+
+```{r fit_hierarchical_model}
+library("rjags")
+dat <- list(x=rad$Survived, g=rad$Occasion, n=dim(rad)[1])
+fnm <- "jags_radiation_example.txt"
+mon <- c("pi", "hyper_pi", "hyper_n")
+mod <- jags.model(fnm, data=dat, quiet=TRUE)
+rex <-  
+  coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
+summary(rex)
+plot(rex)
+```
