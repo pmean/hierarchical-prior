@@ -11,110 +11,51 @@ with 4/16 successes/failures and the second is your observed data with
 
 Now consider the same prior, but your observed data is 54/6 successes/failures.
 
-Here is the simple beta-binomial model. The posterior mean of pi is a weighted average of the prior
-mean (4/20 or 20%) and the data mean (18/60 or 30%; 54/60 or 90%).
-
-```{r run_simple_jags_model}
-
-library("rjags")
-
-fnm <- "jags_beta_binomial.txt"
-mon <- c("pi")
-
-out <- list(description="jags output")
-
-dat <- list(a=4, b=16, x=18, n=60)
-mod <- jags.model(fnm, data=dat, quiet=TRUE)
-out$bb1 <- 
-  coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
-summary(out$bb1)
-plot(out$bb1)
-
-dat <- list(a=4, b=16, x=54, n=60)
-mod <- jags.model(fnm, data=dat, quiet=TRUE)
-out$bb2 <-
-  coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
-summary(out$bb2)
-plot(out$bb2)
-
-```
-
-You can use a hierarchical model to downweight the prior mean when the data disagrees
-strongly with the prior. Here's a simple approach, though it does not work so well.
-
-
-Start by assuming that both clusters (the prior and the data) are drawn from a distribution
-that is beta(alpha,beta) and alpha and beta are hyperpriors distributed exponentially.
-
-```{r run_gamma_gamma_hyperprior_model}
-
-run_bayes <- function(x0, n0, x, n, model_name, output_name) {
-  fnm <- paste("jags", model_name, "hyper.txt", sep="_")
-  dat <- list(x0=x0, n0=n0, x=x, n=n)
-  mon <- c("pi0", "pi1", "hyper_a", "hyper_b", "hyper_n", "hyper_pi")
-  mod <- jags.model(fnm, data=dat, quiet=TRUE, n.adapt=10000)
-  out[[output_name]] <<- 
-    coda.samples(mod, variable.names=mon, n.iter=10000, progress.bar=NULL)
-  print(summary(out[[output_name]]))  
-  plot(out[[output_name]])
-}
-
-run_bayes(4, 20, 18, 60, "gamma_gamma", "gg1")
-run_bayes(4, 20, 54, 60, "gamma_gamma", "gg2")
-
-```
-Try a uniform distribution instead.
-
-
-```{r run_uniform_uniform_hyperprior_model}
-
-run_bayes(4, 20, 18, 60, "uniform_uniform", "uu1")
-run_bayes(4, 20, 54, 60, "uniform_uniform", "uu2")
-
-```
-
-The problem with this model, according to some sources is that the two hyper
-parameters are correlated so highly as to make the Gibbs sampler inefficient.
-
-You can avoid much of this correlation by re-parameterizing.
-
-```{r run_beta_pareto_model}
-
-run_bayes(4, 20, 18, 60, "beta_pareto", "bp1")
-run_bayes(4, 20, 54, 60, "beta_pareto", "bp2")
-
-```
-
 I'm still working on thse sections.
 
 ```{r, compute_everything_gamma_gamma, eval=FALSE}
 
 calculate_gamma_gamma_prior <- function(s0, s1, n) {
   s <- seq(s0, s1, length=n)
-  z <- outer(exp(-s), exp(-s))
-  calculate_p <- function(s_row, s_col) {s_row/(s_row+s_col)}
-  return(list(s_row=s, s_col=s, z=z, calculate_p=calculate_p))
-}
-
-calculate_likelihood <- function(prior, x0, n0, x1, n1) {
-  # use the same dimensions as the prior
-  likelihood <- prior
-  for (i in 1:length(likelihood$s_row)) {
-    for (j in 1:length(likelihood$s_col)) {
-      p <- prior$calculate_p(likelihood$s_row[i], likelihood$s_col[j])
-      likelihood$z[i, j] <- dbinom(x0, n0, p)*dbinom(x1, n1, p)
+  p <- seq(1/(n+1), n/(n+1), length=n)
+  prior <- array(NA, rep(n,4))
+  for (i1 in 1:n) {
+    for (i2 in 1:n) {
+      for (j1 in 1:n) {
+        for (j2 in 1:n) {
+          prior[i1,i2,j1,j2] <-
+            dgamma(s[i1], 1) *
+            dgamma(s[i2], 1) *
+            dbeta(p[j1], 1+s[i1], 1+s[i2]) *
+            dbeta(p[j2], 1+s[i1], 1+s[i2])
+        }
+      }
     }
   }
+  prior <- prior / sum(prior)
+  return(list(s=s, p=p, prior=prior))
+}
+tst1 <- calculate_gamma_gamma_prior(0.1, 10, 39)
+
+calculate_likelihood <- function(p, x, n) {
+  likelihood <- pbinom(x, n, p)
   return(likelihood)
 }
+tst2 <- calculate_likelihood(tst1$p, 4, 20)
 
-calculate_posterior <- function(prior, likelihood) {
-  # use the same dimensions as the prior
-  posterior <- prior
-  posterior$z <- prior$z * likelihood$z
-  posterior$z <- posterior$z / sum(posterior$z)
+calculate_posterior_1 <- function(prior, likelihood) {
+  d <- dim(prior$prior)
+  posterior <- array(0, dim=d)
+  for (i1 in 1:d[1]) {
+    for (i2 in 1:d[2]) {
+      for (j2 in 1:d[4]) {
+        posterior[i1, i2, , j2] <- prior$prior[i1, i2, , j2] * likelihood
+      }
+    }
+  }
   return(posterior)
 }
+tst3 <- calculate_posterior_1(tst1, tst2)
 
 gamma_gamma_prior <- calculate_gamma_gamma_prior(0.001, 4, 400)
 
