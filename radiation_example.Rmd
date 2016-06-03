@@ -29,5 +29,30 @@ mod <- jags.model(fnm, data=dat, quiet=TRUE)
 rex <-  
   coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
 summary(rex)
-plot(rex)
 ```
+
+```{r read_gelman}
+rat <- read.table(file="http://www.stat.columbia.edu/~gelman/book/data/rats.asc", skip=3, header=TRUE)
+summary(rat)
+head(rat)
+```
+
+```{r fit_another_hierarchical_model}
+dat <- list(x=rat$y, n=rat$N, k=dim(rat)[1])
+fnm <- "jags_gelman_rat_example.txt"
+mon <- c("pi", "hyper_pi", "hyper_n")
+mod <- jags.model(fnm, data=dat, quiet=TRUE)
+rax <-  
+  coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
+su <- summary(rax)
+print(su)
+a <- su$statistics["hyper_n", "Mean"] * su$statistics["hyper_pi", "Mean"]
+b <- su$statistics["hyper_n", "Mean"] - a
+bayes_estimates <- su$statistics[3:73, "Mean"]
+approx <- (rat$y+a) / (rat$N+a+b)
+raw <- rat$y / rat$N
+cbind(bayes_estimates, approx, raw)
+
+
+```
+

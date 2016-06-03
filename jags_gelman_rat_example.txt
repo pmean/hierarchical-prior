@@ -1,0 +1,10 @@
+model {
+  hyper_n ~ dpar(1.5, 1)
+  hyper_pi ~ dbeta(1, 1)
+  hyper_a <- hyper_n * hyper_pi
+  hyper_b <- hyper_n - hyper_a
+  for (i in 1:length(x)) {
+    pi[i] ~ dbeta(hyper_a, hyper_b) 
+    x[i] ~ dbin(pi[i], n[i])
+  }
+}

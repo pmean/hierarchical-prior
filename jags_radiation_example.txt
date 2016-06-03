@@ -6,7 +6,7 @@ model {
  for (i in 1:max(g[])) {
   pi[i] ~ dbeta(hyper_a, hyper_b) 
  }
- for (i in 1:n) {
+ for (i in 1:length(x)) {
   x[i] ~ dbin(pi[g[i]], 400)
  }
 }

@@ -1,0 +1,91 @@
+----
+title: "Hierarchical beta binomial"
+author: "Steve Simon"
+date: "Saturday, May 28, 2016"
+output: html_document
+---
+
+Assume that you have two "clusters". The first is your prior data 
+with 4/16 successes/failures and the second is your observed data with
+18/42 successes/failures.
+
+Now consider the same prior, but your observed data is 54/6 successes/failures.
+
+Here is the simple beta-binomial model. The posterior mean of pi is a weighted average of the prior
+mean (4/20 or 20%) and the data mean (18/60 or 30%; 54/60 or 90%).
+
+```{r run_simple_jags_model}
+
+library("rjags")
+
+fnm <- "jags_beta_binomial.txt"
+mon <- c("pi")
+
+out <- list(description="jags output")
+
+dat <- list(a=4, b=16, x=18, n=60)
+mod <- jags.model(fnm, data=dat, quiet=TRUE)
+out$bb1 <- 
+  coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
+summary(out$bb1)
+plot(out$bb1)
+
+dat <- list(a=4, b=16, x=54, n=60)
+mod <- jags.model(fnm, data=dat, quiet=TRUE)
+out$bb2 <-
+  coda.samples(mod, variable.names=mon, n.iter=1000, by=1000, progress.bar=NULL)
+summary(out$bb2)
+plot(out$bb2)
+
+```
+
+You can use a hierarchical model to downweight the prior mean when the data disagrees
+strongly with the prior. Here's a simple approach, though it does not work so well.
+
+
+Start by assuming that both clusters (the prior and the data) are drawn from a distribution
+that is beta(alpha,beta) and alpha and beta are hyperpriors distributed exponentially.
+
+```{r run_gamma_gamma_hyperprior_model}
+
+run_bayes <- function(x0, n0, x, n, model_name, output_name) {
+  fnm <- paste("jags", model_name, "hyper.txt", sep="_")
+  dat <- list(x0=x0, n0=n0, x=x, n=n)
+  mon <- c("pi0", "pi1", "hyper_a", "hyper_b", "hyper_n", "hyper_pi")
+  mod <- jags.model(fnm, data=dat, quiet=TRUE, n.adapt=10000)
+  out[[output_name]] <<- 
+    coda.samples(mod, variable.names=mon, n.iter=10000, progress.bar=NULL)
+  print(summary(out[[output_name]]))  
+  plot(out[[output_name]])
+}
+
+run_bayes(4, 20, 18, 60, "gamma_gamma", "gg1")
+run_bayes(4, 20, 54, 60, "gamma_gamma", "gg2")
+
+```
+Try a uniform distribution instead.
+
+
+```{r run_uniform_uniform_hyperprior_model}
+
+run_bayes(4, 20, 18, 60, "uniform_uniform", "uu1")
+run_bayes(4, 20, 54, 60, "uniform_uniform", "uu2")
+
+```
+
+The problem with this model, according to some sources is that the two hyper
+parameters are correlated so highly as to make the Gibbs sampler inefficient.
+
+You can avoid much of this correlation by re-parameterizing.
+
+```{r run_beta_pareto_model}
+
+run_bayes(4, 20, 18, 60, "beta_pareto", "bp1")
+run_bayes(4, 20, 54, 60, "beta_pareto", "bp2")
+
+```
+
+
+```{r save_everything}
+save.image("run_hierarchical_models.RData")
+```
