@@ -9,6 +9,7 @@ Assume that you have two "clusters". The first is your prior data
 with 4/16 successes/failures and the second is your observed data with
 18/42 successes/failures.
 
+
 Now consider the same prior, but your observed data is 54/6 successes/failures.
 
 I'm still working on thse sections.
