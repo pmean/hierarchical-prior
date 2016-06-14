@@ -148,7 +148,7 @@ draw_surface(3, 4, nasty_posterior)
 
 calculate_beta_pareto_prior <- function(nb) {
   beta_seq <- seq(1/(nb+1), nb/(nb+1), length=nb)
-  z <- array(NA, c(nb,ng, nb, nb))
+  z <- array(NA, c(nb,nb, nb, nb))
   for (i1 in 1:nb) {
     for (i2 in 1:nb) {
       for (j1 in 1:nb) {
