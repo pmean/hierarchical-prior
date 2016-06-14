@@ -144,6 +144,56 @@ draw_surface(1, 2, nasty_posterior)
 draw_surface(3, 4, nasty_posterior)
 ```
 
+```{r, compute_everything_beta_pareto}
+
+calculate_beta_pareto_prior <- function(nb) {
+  beta_seq <- seq(1/(nb+1), nb/(nb+1), length=nb)
+  z <- array(NA, c(nb,ng, nb, nb))
+  for (i1 in 1:nb) {
+    for (i2 in 1:nb) {
+      for (j1 in 1:nb) {
+        for (j2 in 1:nb) {
+          alpha_h <-    beta_seq[i1]  / beta_seq[i2]
+          beta_h  <- (1-beta_seq[i1]) / beta_seq[i2]
+          z[i1,i2,j1,j2] <-
+            dbeta(beta_seq[i1], 1, 1) *
+            dbeta(beta_seq[i2], 1, 1) *
+            dbeta(beta_seq[j1], alpha_h, beta_h) *
+            dbeta(beta_seq[j2], alpha_h, beta_h)
+        }
+      }
+    }
+  }
+  cat("\n\nSum = ", round(sum(z),2), ".\n\n")
+  z <- z / sum(z)
+  a <- list(x1=beta_seq, x2=beta_seq, x3=beta_seq, x4=beta_seq, z=z)
+  return(a)
+}
+tst1 <- calculate_beta_pareto_prior(9)
+tst2 <- calculate_likelihood( 4, 20, tst1, 3)
+tst3 <- calculate_posterior(tst1, tst2)
+tst4 <- calculate_likelihood(54, 60, tst1, 4)
+tst5 <- calculate_posterior(tst3, tst4)
+
+beta_pareto_prior <- calculate_beta_pareto_prior(20)
+prior_likelihood <- calculate_likelihood(4, 20, beta_pareto_prior, 3)
+nice_likelihood  <- calculate_likelihood(18, 60, beta_pareto_prior, 4)
+nasty_likelihood <- calculate_likelihood(54, 60, beta_pareto_prior,4)
+partial_posterior <- calculate_posterior(beta_pareto_prior, prior_likelihood)
+nice_posterior <- calculate_posterior(partial_posterior, nice_likelihood)
+nasty_posterior <- calculate_posterior(partial_posterior, nasty_likelihood)
+```
+
+```{r plot_everything_beta_pareto, fig.width=5, fig.height=5}
+draw_surface(1, 2, beta_pareto_prior)
+draw_surface(3, 4, beta_pareto_prior)
+draw_surface(1, 2, partial_posterior)
+draw_surface(3, 4, partial_posterior)
+draw_surface(1, 2, nice_posterior)
+draw_surface(3, 4, nice_posterior)
+draw_surface(1, 2, nasty_posterior)
+draw_surface(3, 4, nasty_posterior)
+```
 
 ```{r save_everything}
 save.image("hierarchical-prior.RData")
